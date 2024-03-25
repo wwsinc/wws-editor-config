@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+
+    <Authors>Vadim Khalatryan</Authors>
+    <Company>World Web Services Inc</Company>
+    <Product>EditorConfig</Product>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright © WWS Inc. $([System.DateTime]::Now.Year)</Copyright>
+    <PackageTags>wws-editor-config</PackageTags>
+    <PackageId>Wws.EditorConfig</PackageId>
+    <Title>Wws.EditorConfig</Title>
+    <Description>Distributes a common .editorconfig file and some common properties.</Description>
+    <IsPackable>true</IsPackable>
+    <IncludeSource>true</IncludeSource>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/wwsinc/wws-editor-config</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/wwsinc/wws-editor-config</RepositoryUrl>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>$(CI_BUILD)</GeneratePackageOnBuild>
+
+    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Compose the .editorconfig file from the templates -->
+  <Target Name="CreateEditorConfig" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <EditorConfigFilesToJoin Include="
+          Rules\Templates\editorconfig.rules;
+          Rules\Templates\sonar-analyzer.rules" />
+    </ItemGroup>
+    <ItemGroup>
+      <EditorConfigFileContents Include="$([System.IO.File]::ReadAllText(%(EditorConfigFilesToJoin.Identity)))" />
+    </ItemGroup>
+    <WriteLinesToFile File="Rules\.editorconfig" Lines="@(EditorConfigFileContents)" Overwrite="true" />
+  </Target>
+
+  <!-- Select the MSBuild props and composed .editorconfig files to pack -->
+  <ItemGroup>
+    <None Include="../icon.png" Pack="true" Visible="false" PackagePath="/" />
+    <None Include="../readme.md" Pack="true" Visible="false" PackagePath="/" />
+    <None Include="build\Wws.EditorConfig.props" Pack="true" PackagePath="build\" />
+    <Content Include="Rules\.editorconfig" Pack="true" PackagePath="content\rules"></Content>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(CI_BUILD)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>
