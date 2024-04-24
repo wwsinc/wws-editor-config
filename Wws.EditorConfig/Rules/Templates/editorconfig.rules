@@ -369,13 +369,16 @@ dotnet_diagnostic.IDE0200.severity = warning
 
 # IDE2000: Disallow multiple blank lines
 dotnet_style_allow_multiple_blank_lines_experimental = false
-dotnet_diagnostic.IDE2000.severity = warning
+dotnet_diagnostic.IDE2000.severity = error
 
 #IDE0130: Namespace does not match folder structure
 dotnet_diagnostic.IDE0130.severity = warning
 
 # IDE0052: Remove unread private members
 dotnet_diagnostic.IDE0052.severity = silent
+
+# IDE0053: Remove URI return values should not be strings
+dotnet_diagnostic.CA1055.severity = none
 
 [{eng/tools/**.cs,**/{test,testassets,samples,Samples,perf,benchmarkapps,scripts,stress}/**.cs,src/Hosting/Server.IntegrationTesting/**.cs,src/Servers/IIS/IntegrationTesting.IIS/**.cs,src/Shared/Http2cat/**.cs,src/Testing/**.cs}]
 # CA1018: Mark attributes with AttributeUsageAttribute
