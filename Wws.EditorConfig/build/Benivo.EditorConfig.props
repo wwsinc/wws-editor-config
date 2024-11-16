@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<AnalysisMode>All</AnalysisMode>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+		<RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>nullable</WarningsAsErrors>
+		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="[9.32.0.97167]">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EditorConfigFilesToCopy Include="$(MSBuildThisFileDirectory)..\content\rules\.editorconfig" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TF_BUILD)' == 'true'">
+		<EditorConfigDestination Include="$(MSBuildProjectDirectory)" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TF_BUILD)' != 'true'">
+		<EditorConfigDestination Include="$(SolutionDir)" />
+	</ItemGroup>
+
+	<Target Name="CopyEditorConfig" BeforeTargets="Rebuild;Build" Condition="'$(CI_BUILD)' != 'true' AND '@(EditorConfigDestination)' != ''">
+		<Message Text="Copying the .editorconfig file from '@(EditorConfigFilesToCopy)' to '@(EditorConfigDestination)'" Importance="high"></Message>
+		<Copy
+		  SourceFiles="@(EditorConfigFilesToCopy)"
+		  DestinationFolder="@(EditorConfigDestination)"
+		  SkipUnchangedFiles="true"
+		  UseHardlinksIfPossible="false" />
+	</Target>
+
+</Project>

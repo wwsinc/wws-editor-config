@@ -14,14 +14,14 @@ dotnet_diagnostic.S3358.severity = suggestion
 # S1133: Deprecated code should be removed
 dotnet_diagnostic.S1133.severity = suggestion
 
-# S1144: Unused private types or members should be removed
-dotnet_diagnostic.S1144.severity = suggestion
-
 # S2326: Unused type parameters should be removed
 dotnet_diagnostic.S2326.severity = none
 
 # S1144: Unused private types or members should be removed
 dotnet_diagnostic.S1144.severity = none
+
+# S6960: Controllers should not have too many responsibilities
+dotnet_diagnostic.S6960.severity = none
 
 # xUnit1033: Test classes decorated with 'Xunit.IClassFixture' or 'Xunit.ICollectionFixture' should add a constructor argument of type TFixture
 dotnet_diagnostic.xUnit1033.severity = none
