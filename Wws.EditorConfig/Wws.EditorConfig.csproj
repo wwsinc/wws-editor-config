@@ -40,9 +40,7 @@
   <!-- Compose the .editorconfig file from the templates -->
   <Target Name="CreateEditorConfig" BeforeTargets="BeforeBuild">
     <ItemGroup>
-      <EditorConfigFilesToJoin Include="
-          Rules\Templates\editorconfig.rules;
-          Rules\Templates\sonar-analyzer.rules" />
+      <EditorConfigFilesToJoin Include="&#xA;          Rules\Templates\editorconfig.rules;&#xA;          Rules\Templates\sonar-analyzer.rules" />
     </ItemGroup>
     <ItemGroup>
       <EditorConfigFileContents Include="$([System.IO.File]::ReadAllText(%(EditorConfigFilesToJoin.Identity)))" />
@@ -54,7 +52,6 @@
   <ItemGroup>
     <None Include="../icon.png" Pack="true" Visible="false" PackagePath="/" />
     <None Include="../readme.md" Pack="true" Visible="false" PackagePath="/" />
-    <None Include="build\Wws.EditorConfig.props" Pack="true" PackagePath="build\" />
     <Content Include="Rules\.editorconfig" Pack="true" PackagePath="content\rules"></Content>
   </ItemGroup>
 
