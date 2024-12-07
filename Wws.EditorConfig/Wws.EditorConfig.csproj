@@ -19,7 +19,7 @@
     <Title>Wws.EditorConfig</Title>
     <Description>Distributes a common .editorconfig file and some common properties.</Description>
     <IsPackable>true</IsPackable>
-    <PackageLicenseExpression>GPL-3.0</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <IncludeSource>true</IncludeSource>
     <NoDefaultExcludes>true</NoDefaultExcludes>    
     
