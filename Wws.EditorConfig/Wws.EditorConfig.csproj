@@ -34,8 +34,7 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <!-- Embed source files that are not tracked by the source control manager in the PDB -->
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->
-    <DebugType>embedded</DebugType>
+    <!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->    
     <EmbedAllSources>true</EmbedAllSources>
     
     <EnablePackageValidation>true</EnablePackageValidation> 
