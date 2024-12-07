@@ -67,6 +67,7 @@ jobs:
       # using the --excluded-rules or --excluded-rule-ids option
       - name: Validate package
         run: |
+            Write-Host "Current directory: $(Get-Location)"
             $nugetPackages = Get-ChildItem "/home/runner/work/wws-editor-config/wws-editor-config/**/bin/Release" -Filter *.nupkg -Recurse
             foreach ($package in $nugetPackages) {
               Write-Host "Validating package: $($package.FullName)"
