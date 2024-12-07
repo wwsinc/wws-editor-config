@@ -10,7 +10,7 @@ This NuGet package provides a convenient solution for maintaining consistent cod
 
 ## Installation
 
-You can easily install the package via NuGet using the following command:
+To install the **Wws.EditorConfig** NuGet package, you can use the following commands:
 
-```bash
-PM> NuGet\Install-Package Wws.EditorConfig
+  ```bash
+  Install-Package Wws.EditorConfig -Version <latest_version>
