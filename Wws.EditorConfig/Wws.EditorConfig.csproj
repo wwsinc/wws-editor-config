@@ -20,7 +20,6 @@
     <Description>Distributes a common .editorconfig file and some common properties.</Description>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>GPL-3.0</PackageLicenseExpression>
-    <PackageLicenseUrl>https://github.com/wwsinc/wws-editor-config?tab=GPL-3.0-1-ov-file#readme</PackageLicenseUrl>    
     <IncludeSource>true</IncludeSource>
     <NoDefaultExcludes>true</NoDefaultExcludes>    
     
