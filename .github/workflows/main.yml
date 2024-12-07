@@ -66,8 +66,12 @@ jobs:
       # If some rules are not applicable, you can disable them
       # using the --excluded-rules or --excluded-rule-ids option
       - name: Validate package
-        run: meziantou.validate-nuget-package (Get-ChildItem "**/bin/Release")
-
+        run: |
+            $nugetPackages = Get-ChildItem "/home/runner/work/wws-editor-config/wws-editor-config/**/bin/Release" -Filter *.nupkg -Recurse
+            foreach ($package in $nugetPackages) {
+              Write-Host "Validating package: $($package.FullName)"
+              meziantou.validate-nuget-package $package.FullName
+            }
   deploy:
     # Publish only when creating a GitHub Release
     # https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository
@@ -91,6 +95,6 @@ jobs:
       # If you retry a failed workflow, already published packages will be skipped without error.
       - name: Publish NuGet package
         run: |
-          foreach($file in (Get-ChildItem "**/bin/Release" -Recurse -Include *.nupkg)) {
+          foreach($file in (Get-ChildItem "/home/runner/work/wws-editor-config/wws-editor-config/**/bin/Release" -Recurse -Include *.nupkg)) {
               dotnet nuget push $file --api-key "${{ secrets.NUGET_APIKEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
