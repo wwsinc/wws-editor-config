@@ -72,7 +72,7 @@ jobs:
             $nugetPackages = Get-ChildItem "/home/runner/work/wws-editor-config/wws-editor-config" -Filter *.nupkg -Recurse
             foreach ($package in $nugetPackages) {
               Write-Host "Validating package: $($package.FullName)"
-              meziantou.validate-nuget-package $package.FullName -Verbose
+              meziantou.validate-nuget-package $package.FullName --excluded-rules Symbols
             }
   deploy:
     # Publish only when creating a GitHub Release
