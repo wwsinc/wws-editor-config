@@ -1,5 +1,8 @@
 # Shared Editor Config and Common Props NuGet Package
 
+[![nuget](https://img.shields.io/nuget/v/Wws.EditorConfig.svg?style=flat-square)](https://www.nuget.org/packages/Wws.EditorConfig/)
+[![downloads](https://img.shields.io/nuget/dt/Wws.EditorConfig.svg?style=flat-square)](https://www.nuget.org/packages/Wws.EditorConfig/)
+
 This NuGet package provides a convenient solution for maintaining consistent coding standards and project settings across all projects. It includes a collection of commonly used editor configurations and project properties that can be easily shared and applied to all projects.
 
 ## Features:
@@ -14,3 +17,10 @@ To install the **Wws.EditorConfig** NuGet package, you can use the following com
 
   ```bash
   Install-Package Wws.EditorConfig -Version <latest_version>
+  ```
+## Links
+
+- [Code analysis in .NET](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/)
+- [EditorConfig](https://editorconfig.org/)
+- [Configuration files for code analysis rules - .NET](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files)
+- [Roslyn Analyzers](https://github.com/dotnet/roslyn-analyzers), [StyleCop](https://github.com/StyleCop/StyleCop), [Roslynator](https://github.com/JosefPihrt/Roslynator), [XUnit Analyzers](https://xunit.net/), [Sonar Analyzer](https://www.sonarsource.com/)
