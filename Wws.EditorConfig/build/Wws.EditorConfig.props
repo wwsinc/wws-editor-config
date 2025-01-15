@@ -17,7 +17,7 @@
 	</PropertyGroup>
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="[10.4.0.108396]" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="[10.5.0.109200]" />
     <PackageReference Include="SonarAnalyzer.CSharp">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'false'">
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="[10.4.0.108396]">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="[10.5.0.109200]">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
