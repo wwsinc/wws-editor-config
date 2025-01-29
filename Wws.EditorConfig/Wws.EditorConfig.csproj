@@ -22,7 +22,7 @@
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <IncludeSource>true</IncludeSource>
     <NoDefaultExcludes>true</NoDefaultExcludes>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
 
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/wwsinc/wws-editor-config</PackageProjectUrl>
@@ -44,7 +44,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.5.0.109200">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.6.0.109712">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -53,9 +53,7 @@
   <!-- Compose the .editorconfig file from the templates -->
   <Target Name="CreateEditorConfig" BeforeTargets="BeforeBuild">
     <ItemGroup>
-      <EditorConfigFilesToJoin Include="
-          Rules\Templates\editorconfig.rules;
-          Rules\Templates\sonar-analyzer.rules" />
+      <EditorConfigFilesToJoin Include="&#xA;          Rules\Templates\editorconfig.rules;&#xA;          Rules\Templates\sonar-analyzer.rules" />
     </ItemGroup>
     <ItemGroup>
       <EditorConfigFileContents Include="$([System.IO.File]::ReadAllText(%(EditorConfigFilesToJoin.Identity)))" />
