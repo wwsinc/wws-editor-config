@@ -1,76 +1,76 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
 
-    <Authors>Vadim Khalatryan</Authors>
-    <Company>World Web Services Inc</Company>
-    <Product>EditorConfig</Product>
-    <NeutralLanguage>en-US</NeutralLanguage>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Copyright>Copyright © WWS Inc. $([System.DateTime]::Now.Year)</Copyright>
-    <PackageTags>wws-editor-config</PackageTags>
-    <PackageId>Wws.EditorConfig</PackageId>
-    <Title>Wws.EditorConfig</Title>
-    <Description>Distributes a common .editorconfig file and some common properties.</Description>
-    <IsPackable>true</IsPackable>
-    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <IncludeSource>true</IncludeSource>
-    <NoDefaultExcludes>true</NoDefaultExcludes>
-    <Version>1.1.1</Version>
+		<Authors>Vadim Khalatryan</Authors>
+		<Company>World Web Services Inc</Company>
+		<Product>EditorConfig</Product>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<Copyright>Copyright © WWS Inc. $([System.DateTime]::Now.Year)</Copyright>
+		<PackageTags>wws-editor-config</PackageTags>
+		<PackageId>Wws.EditorConfig</PackageId>
+		<Title>Wws.EditorConfig</Title>
+		<Description>Distributes a common .editorconfig file and some common properties.</Description>
+		<IsPackable>true</IsPackable>
+		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+		<IncludeSource>true</IncludeSource>
+		<NoDefaultExcludes>true</NoDefaultExcludes>
+		<Version>1.1.2</Version>
 
-    <RepositoryType>git</RepositoryType>
-    <PackageProjectUrl>https://github.com/wwsinc/wws-editor-config</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/wwsinc/wws-editor-config</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/wwsinc/wws-editor-config</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/wwsinc/wws-editor-config</RepositoryUrl>
 
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <GeneratePackageOnBuild>$(CI_BUILD)</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GeneratePackageOnBuild>$(CI_BUILD)</GeneratePackageOnBuild>
 
-    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <!-- Embed source files that are not tracked by the source control manager in the PDB -->
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->
-    <DebugSymbols>true</DebugSymbols>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <EmbedAllSources>true</EmbedAllSources>
-    <EnablePackageValidation>true</EnablePackageValidation>
-  </PropertyGroup>
+		<!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<!-- Embed source files that are not tracked by the source control manager in the PDB -->
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->
+		<DebugSymbols>true</DebugSymbols>
+		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+		<EmbedAllSources>true</EmbedAllSources>
+		<EnablePackageValidation>true</EnablePackageValidation>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.11.0.117924">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.12.0.118525">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
 
-  <!-- Compose the .editorconfig file from the templates -->
-  <Target Name="CreateEditorConfig" BeforeTargets="BeforeBuild">
-    <ItemGroup>
-      <EditorConfigFilesToJoin Include="&#xA;          Rules\Templates\editorconfig.rules;&#xA;          Rules\Templates\sonar-analyzer.rules" />
-    </ItemGroup>
-    <ItemGroup>
-      <EditorConfigFileContents Include="$([System.IO.File]::ReadAllText(%(EditorConfigFilesToJoin.Identity)))" />
-    </ItemGroup>
-    <WriteLinesToFile File="Rules\.editorconfig" Lines="@(EditorConfigFileContents)" Overwrite="true" />
-  </Target>
+	<!-- Compose the .editorconfig file from the templates -->
+	<Target Name="CreateEditorConfig" BeforeTargets="BeforeBuild">
+		<ItemGroup>
+			<EditorConfigFilesToJoin Include="&#xA;          Rules\Templates\editorconfig.rules;&#xA;          Rules\Templates\sonar-analyzer.rules" />
+		</ItemGroup>
+		<ItemGroup>
+			<EditorConfigFileContents Include="$([System.IO.File]::ReadAllText(%(EditorConfigFilesToJoin.Identity)))" />
+		</ItemGroup>
+		<WriteLinesToFile File="Rules\.editorconfig" Lines="@(EditorConfigFileContents)" Overwrite="true" />
+	</Target>
 
-  <!-- Select the MSBuild props and composed .editorconfig files to pack -->
-  <ItemGroup>
-    <None Include="../icon.png" Pack="true" Visible="false" PackagePath="/" />
-    <None Include="../readme.md" Pack="true" Visible="false" PackagePath="/" />
-    <None Include="build\Wws.EditorConfig.props" Pack="true" PackagePath="build\" />
-    <Content Include="Rules\.editorconfig" Pack="true" PackagePath="content\rules"></Content>
-  </ItemGroup>
+	<!-- Select the MSBuild props and composed .editorconfig files to pack -->
+	<ItemGroup>
+		<None Include="../icon.png" Pack="true" Visible="false" PackagePath="/" />
+		<None Include="../readme.md" Pack="true" Visible="false" PackagePath="/" />
+		<None Include="build\Wws.EditorConfig.props" Pack="true" PackagePath="build\" />
+		<Content Include="Rules\.editorconfig" Pack="true" PackagePath="content\rules"></Content>
+	</ItemGroup>
 
-  <PropertyGroup Condition="'$(CI_BUILD)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(CI_BUILD)' == 'true'">
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	</PropertyGroup>
 
 </Project>
