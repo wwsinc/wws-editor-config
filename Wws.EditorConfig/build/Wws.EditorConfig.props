@@ -17,7 +17,7 @@
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
-		<PackageVersion Include="SonarAnalyzer.CSharp" Version="[10.19.0.132793]" />
+		<PackageVersion Include="SonarAnalyzer.CSharp" Version="[10.20.0.135146]" />
 		<PackageReference Include="SonarAnalyzer.CSharp">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'false'">
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="[10.19.0.132793]">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="[10.20.0.135146]">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -44,12 +44,17 @@
 	</ItemGroup>
 
 	<Target Name="CopyEditorConfig" BeforeTargets="Rebuild;Build" Condition="'$(CI_BUILD)' != 'true' AND '@(EditorConfigDestination)' != ''">
-		<Message Text="Copying the .editorconfig file from '@(EditorConfigFilesToCopy)' to '@(EditorConfigDestination)'" Importance="high"></Message>
 		<Copy
-		  SourceFiles="@(EditorConfigFilesToCopy)"
-		  DestinationFolder="@(EditorConfigDestination)"
-		  SkipUnchangedFiles="true"
-		  UseHardlinksIfPossible="false" />
+			SourceFiles="@(EditorConfigFilesToCopy)"
+			DestinationFolder="@(EditorConfigDestination)"
+			SkipUnchangedFiles="true"
+			UseHardlinksIfPossible="false">
+			<Output TaskParameter="CopiedFiles" ItemName="_CopiedEditorConfigFiles" />
+		</Copy>
+		<Message
+			Text="Copied .editorconfig from '@(EditorConfigFilesToCopy)' to '@(EditorConfigDestination)'"
+			Importance="high"
+			Condition="'@(_CopiedEditorConfigFiles)' != ''" />
 	</Target>
 
 </Project>

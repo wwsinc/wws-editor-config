@@ -22,7 +22,7 @@
 		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
 		<IncludeSource>true</IncludeSource>
 		<NoDefaultExcludes>true</NoDefaultExcludes>
-		<Version>1.1.9</Version>
+		<Version>1.1.10</Version>
 
 		<RepositoryType>git</RepositoryType>
 		<PackageProjectUrl>https://github.com/wwsinc/wws-editor-config</PackageProjectUrl>
@@ -43,8 +43,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.19.0.132793">
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.103" PrivateAssets="All" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.20.0.135146">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
