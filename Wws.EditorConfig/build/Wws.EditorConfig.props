@@ -35,22 +35,33 @@
 		<EditorConfigFilesToCopy Include="$(MSBuildThisFileDirectory)..\content\rules\.editorconfig" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(TF_BUILD)' == 'true'">
-		<EditorConfigDestination Include="$(MSBuildProjectDirectory)" />
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(TF_BUILD)' != 'true'">
+	<PropertyGroup>
+		<_IsCI Condition="'$(TF_BUILD)' == 'true' OR '$(CI_BUILD)' == 'true'">true</_IsCI>
+	</PropertyGroup>
+	
+	<ItemGroup Condition="'$(_IsCI)' != 'true'">
 		<EditorConfigDestination Include="$(SolutionDir)" />
+		<EditorConfigDestinationFile Include="$(SolutionDir)\.editorconfig" />
 	</ItemGroup>
 
-	<Target Name="CopyEditorConfig" BeforeTargets="Rebuild;Build" Condition="'$(CI_BUILD)' != 'true' AND '@(EditorConfigDestination)' != ''">
+	<Target Name="CopyEditorConfig" BeforeTargets="Rebuild;Build" Condition="'$(_IsCI)' != 'true' AND '@(EditorConfigDestination)' != ''">
+		<GetFileHash Files="@(EditorConfigFilesToCopy)">
+			<Output TaskParameter="Hash" ItemName="_SourceHash" />
+		</GetFileHash>
+
+		<GetFileHash Files="@(EditorConfigDestinationFile)" Condition="Exists('@(EditorConfigDestinationFile)')">
+			<Output TaskParameter="Hash" ItemName="_DestHash" />
+		</GetFileHash>
+		
 		<Copy
 			SourceFiles="@(EditorConfigFilesToCopy)"
 			DestinationFolder="@(EditorConfigDestination)"
+			Condition="'@(_SourceHash)' != '@(_DestHash)'"
 			SkipUnchangedFiles="true"
 			UseHardlinksIfPossible="false">
 			<Output TaskParameter="CopiedFiles" ItemName="_CopiedEditorConfigFiles" />
 		</Copy>
+	
 		<Message
 			Text="Copied .editorconfig from '@(EditorConfigFilesToCopy)' to '@(EditorConfigDestination)'"
 			Importance="high"
