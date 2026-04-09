@@ -572,6 +572,16 @@ dotnet_style_object_initializer = true:suggestion
 dotnet_style_collection_initializer = true:suggestion
 dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+
+[**/Migrations/*.cs]
+dotnet_diagnostic.S1192.severity = none
+dotnet_diagnostic.S1133.severity = none
+dotnet_diagnostic.S4226.severity = none
+
+# Suppress S4226 for Mapper files only
+# Extension methods in a different namespace is fine in mappers
+[**/Contracts/**/*Mapper.cs]
+dotnet_diagnostic.S4226.severity = none
 #==========================
 # Rules for SonarAnalyzer
 #==========================
