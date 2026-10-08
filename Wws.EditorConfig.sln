@@ -25,6 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixture", "fixture", "{5C4D
 		tests\smoke\fixture\Directory.Build.props = tests\smoke\fixture\Directory.Build.props
 		tests\smoke\fixture\src\Smoke\Smoke.csproj = tests\smoke\fixture\src\Smoke\Smoke.csproj
 		tests\smoke\fixture\src\Smoke\Violations.cs = tests\smoke\fixture\src\Smoke\Violations.cs
+		tests\smoke\fixture\src\Smoke\Shared\SharedCode.cs = tests\smoke\fixture\src\Smoke\Shared\SharedCode.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{7EF92873-D836-4803-BD72-94A82F17FCAF}"

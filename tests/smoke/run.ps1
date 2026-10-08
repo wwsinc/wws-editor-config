@@ -58,16 +58,17 @@ function Assert([bool] $condition, [string] $message) {
 }
 
 # Violations.cs breaks exactly one rule configured as an error (S121), so the build is expected to fail with only that error.
-# Anything else failing (restore, MSBuild, other rules) shows up as an unexpected error code.
+# Anything else failing (restore, MSBuild, other rules) shows up as an unexpected error.
 function Invoke-Build([string] $target, [bool] $ci) {
     $env:CI_BUILD = if ($ci) { 'true' } else { $null }
-    $env:TF_BUILD = $null
+    $env:TF_BUILD = if ($ci) { 'true' } else { $null }
     $output = dotnet build $target --no-incremental -nodeReuse:false -p:WwsEditorConfigVersion=$version 2>&1 | Out-String
-    $errors = [regex]::Matches($output, 'error ([A-Z]+\d+)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
+    $exitCode = $LASTEXITCODE
+    $errors = @([regex]::Matches($output, 'error ([A-Z]+\d+)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
     $unexpected = @($errors | Where-Object { $_ -ne 'S121' })
-    if ($unexpected.Count -gt 0) {
+    if ($unexpected.Count -gt 0 -or ($exitCode -ne 0 -and $errors -notcontains 'S121')) {
         Write-Host $output
-        throw "Build of '$target' failed with unexpected errors: $($unexpected -join ', ')"
+        throw "Build of '$target' failed unexpectedly (exit code $exitCode, errors: $($errors -join ', '))."
     }
     return $output
 }
@@ -85,6 +86,7 @@ Assert ((Test-Path $solutionEditorConfig) -and (Get-Hash $solutionEditorConfig) 
 Assert ($output -match 'warning S1481') 'SonarAnalyzer rule S1481 reported'
 Assert ($output -match 'error S121') 'SonarAnalyzer rule S121 raised to error by the package rules'
 Assert ($output -match 'warning IDE0011') 'code style rule IDE0011 reported'
+Assert ($output -notmatch 'IDE0005') 'IDE0005 (an error elsewhere) stays off for **/Shared/**'
 
 Write-Host 'Project build (no solution context) overwrites an edited .editorconfig in the solution folder before compiling'
 Set-Content -Path $solutionEditorConfig -Value "root = true`r`n[*.cs]`r`ndotnet_diagnostic.IDE0011.severity = none"
@@ -93,13 +95,14 @@ Assert ((Get-Hash $solutionEditorConfig) -eq (Get-Hash $packagedEditorConfig)) '
 Assert ($output -match 'warning IDE0011') 'restored rules applied in the same build'
 Assert (-not (Test-Path $projectEditorConfig)) 'nothing copied next to the project'
 
-Write-Host 'CI build does not copy .editorconfig but still enforces the rules through .globalconfig'
+Write-Host 'CI build copies .editorconfig too, so folder-specific overrides apply exactly as locally'
 Remove-Item $solutionEditorConfig
 $output = Invoke-Build $solution.FullName $true
-Assert (-not (Test-Path $solutionEditorConfig)) '.editorconfig not copied in CI'
+Assert ((Test-Path $solutionEditorConfig) -and (Get-Hash $solutionEditorConfig) -eq (Get-Hash $packagedEditorConfig)) '.editorconfig copied in CI'
 Assert ($output -match 'warning S1481') 'SonarAnalyzer rule S1481 reported in CI'
 Assert ($output -match 'error S121') 'SonarAnalyzer rule S121 raised to error in CI'
 Assert ($output -match 'warning IDE0011') 'code style rule IDE0011 reported in CI'
+Assert ($output -notmatch 'IDE0005') 'IDE0005 (an error elsewhere) stays off for **/Shared/** in CI'
 
 Write-Host 'Project without any solution gets .editorconfig next to the project'
 Remove-Item $solution.FullName
@@ -107,6 +110,7 @@ $output = Invoke-Build $project $false
 Assert (Test-Path $projectEditorConfig) '.editorconfig copied to the project folder'
 
 $env:CI_BUILD = $null
+$env:TF_BUILD = $null
 if ($failures.Count -gt 0) {
     Write-Host "$($failures.Count) smoke check(s) failed. Fixture left in $work" -ForegroundColor Red
     exit 1

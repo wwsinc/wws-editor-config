@@ -30,20 +30,17 @@ The package is a development dependency. It never becomes a dependency of the pa
 
 ## What you get
 
-### Rules, enforced in two ways
+### The shared `.editorconfig`
 
-| Where | How | What it covers |
-| --- | --- | --- |
-| Local builds (Visual Studio, Rider, `dotnet build`) | `.editorconfig` copied to the solution folder before compiling | Formatting, code style, naming, analyzer severities, plus folder-specific overrides. The IDE uses it too. |
-| Every build, CI included | `.globalconfig` passed straight to the compiler | Code style, naming and analyzer severities for C# files |
+Every build (Visual Studio, Rider, `dotnet build`, CI) writes the packaged `.editorconfig` before compiling, and that same build uses it. It holds the formatting, code style, naming and analyzer rules, plus folder-specific overrides. CI therefore enforces exactly what you see locally, and the IDE uses the same file.
 
-The `.editorconfig` goes to the first location found:
+The file goes to the first location found:
 
 1. The solution folder (`$(SolutionDir)`) when you build a solution.
 2. The nearest folder above the project that contains a `.sln` or `.slnx`, when you build a project on its own. The search stops at the repository root.
 3. The project folder, when there is no solution at all.
 
-The file is only rewritten when its content differs from the packaged one. CI builds (`CI_BUILD=true` or Azure DevOps `TF_BUILD=true`) skip the copy, so the checkout stays untouched, and rely on the `.globalconfig`.
+The file is only rewritten when its content differs from the packaged one. Writes are atomic and retried, so projects and target frameworks building in parallel never see a half-written file. Commit the file, or add it to `.gitignore`. Either way the build keeps it current.
 
 ### SonarAnalyzer
 
@@ -56,7 +53,7 @@ The file is only rewritten when its content differs from the packaged one. CI bu
 | Property | Value |
 | --- | --- |
 | `Nullable` | `enable` |
-| `WarningsAsErrors` | `nullable` (nullable warnings fail the build) |
+| `WarningsAsErrors` | adds `nullable` to your list (nullable warnings fail the build) |
 | `ImplicitUsings` | `enable` |
 | `GenerateDocumentationFile` | `true` (needed for IDE0005 in builds) |
 | `EnforceCodeStyleInBuild` | `true` |
@@ -84,27 +81,29 @@ Naming (warnings):
 Relaxed areas:
 
 - Folders named `test`, `samples`, `perf`, `scripts`, `stress` and similar get softer CA/IDE severities.
-- `**/Migrations/*.cs` and `**/Contracts/**/*Mapper.cs` are exempt from some Sonar rules (S1192, S1133, S4226).
+- `Migrations/*.cs` and `Contracts/**/*Mapper.cs`, at any depth, are exempt from some Sonar rules (S1192, S1133, S4226).
 
-The full list is in [`Rules/Templates`](Wws.EditorConfig/Rules/Templates).
+The full list is in [`Rules/Templates`](https://github.com/wwsinc/wws-editor-config/tree/main/Wws.EditorConfig/Rules/Templates).
 
 ## Changing the rules
 
 1. Edit the templates in `Wws.EditorConfig/Rules/Templates`:
    - `editorconfig.rules`: formatting, code style, naming, .NET analyzers
    - `sonar-analyzer.rules`: SonarAnalyzer severities
-2. Build the project. This regenerates `Rules/.editorconfig` (the templates joined together) and `Rules/.globalconfig` (the `[*.cs]` and `[*.{cs,vb}]` sections, flattened). Commit both generated files with your change.
+2. Build the project. This regenerates `Rules/.editorconfig`, which is the templates joined together. Commit it with your change.
 3. Run the smoke test (below).
 
-The `.globalconfig` cannot hold path-specific sections. Overrides for `[**/Migrations/*.cs]` and similar only apply through the `.editorconfig`, so locally but not in CI.
+Folder patterns are relative to the folder holding the `.editorconfig`, and `**/Shared/` needs at least one folder in front of `Shared`. List both forms, such as `[{Shared/**.cs,**/Shared/**.cs}]`, so the override also works when `Shared` sits directly next to the `.editorconfig` (for example a solution and project in the same folder).
 
 ## Testing
 
 `tests/smoke/run.ps1` installs a freshly packed package into a throwaway solution and checks:
 
-- `.editorconfig` lands in the solution folder and matches the packaged file
+- `.editorconfig` lands in the solution folder, matches the packaged file, and applies on the very first build
 - An edited `.editorconfig` is overwritten before compiling, including when you build a project on its own
-- CI builds skip the copy but still report the rules
+- CI builds (`CI_BUILD`/`TF_BUILD` set) get the same file and the same rules
+- Folder-specific overrides apply (IDE0005 stays off under `Shared/`)
+- A project with no solution gets the file next to it
 - Sonar runs, and the package severities apply (S121 is raised to an error)
 
 ```powershell
