@@ -16,19 +16,14 @@
 		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
 	</PropertyGroup>
 
-	<ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
-		<PackageVersion Include="SonarAnalyzer.CSharp" Version="[10.35.0.4138]" />
-		<PackageReference Include="SonarAnalyzer.CSharp">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
+	<!--
+		SonarAnalyzer.CSharp is not added here: NuGet ignores package props during restore, so a PackageReference
+		declared in this file is never restored. It ships as a dependency of the package instead (see Wws.EditorConfig.csproj).
+	-->
 
-	<ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'false'">
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="[10.35.0.4138]">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
+	<!-- Analyzer severities applied by the compiler directly, so they are enforced even where .editorconfig is not copied (CI) -->
+	<ItemGroup>
+		<GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)..\content\rules\.globalconfig" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -38,32 +33,75 @@
 	<PropertyGroup>
 		<_IsCI Condition="'$(TF_BUILD)' == 'true' OR '$(CI_BUILD)' == 'true'">true</_IsCI>
 	</PropertyGroup>
-	
-	<ItemGroup Condition="'$(_IsCI)' != 'true'">
-		<EditorConfigDestination Include="$(SolutionDir)" />
-		<EditorConfigDestinationFile Include="$(SolutionDir)\.editorconfig" />
-	</ItemGroup>
 
-	<Target Name="CopyEditorConfig" BeforeTargets="Rebuild;Build" Condition="'$(_IsCI)' != 'true' AND '@(EditorConfigDestination)' != ''">
+	<!-- Walks up from the project directory to the nearest folder holding a .sln/.slnx, stopping at the repository root -->
+	<UsingTask TaskName="WwsFindSolutionDirectory" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<StartDirectory ParameterType="System.String" Required="true" />
+			<SolutionDirectory ParameterType="System.String" Output="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Linq" />
+			<Code Type="Fragment" Language="cs"><![CDATA[
+				var dir = new DirectoryInfo(StartDirectory);
+				while (dir != null)
+				{
+					var hasSolution = dir.EnumerateFiles("*.sln*").Any(f =>
+						f.Extension.Equals(".sln", StringComparison.OrdinalIgnoreCase) ||
+						f.Extension.Equals(".slnx", StringComparison.OrdinalIgnoreCase));
+					if (hasSolution)
+					{
+						SolutionDirectory = dir.FullName;
+						break;
+					}
+					if (Directory.Exists(Path.Combine(dir.FullName, ".git")) || File.Exists(Path.Combine(dir.FullName, ".git")))
+					{
+						break;
+					}
+					dir = dir.Parent;
+				}
+			]]></Code>
+		</Task>
+	</UsingTask>
+
+	<!-- Runs before BeforeBuild so the compiler picks up the restored .editorconfig in the same build -->
+	<Target Name="CopyEditorConfig" BeforeTargets="BeforeBuild" Condition="'$(_IsCI)' != 'true'">
+		<PropertyGroup>
+			<_WwsEditorConfigDestinationDir Condition="'$(SolutionDir)' != '' AND '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</_WwsEditorConfigDestinationDir>
+		</PropertyGroup>
+
+		<!-- Building a project directly (no solution): fall back to the nearest solution folder -->
+		<WwsFindSolutionDirectory StartDirectory="$(MSBuildProjectDirectory)" Condition="'$(_WwsEditorConfigDestinationDir)' == ''">
+			<Output TaskParameter="SolutionDirectory" PropertyName="_WwsEditorConfigDestinationDir" />
+		</WwsFindSolutionDirectory>
+
+		<!-- No solution anywhere up to the repository root: keep the rules next to the project -->
+		<PropertyGroup>
+			<_WwsEditorConfigDestinationDir Condition="'$(_WwsEditorConfigDestinationDir)' == ''">$(MSBuildProjectDirectory)</_WwsEditorConfigDestinationDir>
+			<_WwsEditorConfigDestinationDir>$([MSBuild]::EnsureTrailingSlash('$(_WwsEditorConfigDestinationDir)'))</_WwsEditorConfigDestinationDir>
+			<_WwsEditorConfigDestinationFile>$(_WwsEditorConfigDestinationDir).editorconfig</_WwsEditorConfigDestinationFile>
+		</PropertyGroup>
+
 		<GetFileHash Files="@(EditorConfigFilesToCopy)">
-			<Output TaskParameter="Hash" ItemName="_SourceHash" />
+			<Output TaskParameter="Hash" PropertyName="_WwsSourceHash" />
 		</GetFileHash>
 
-		<GetFileHash Files="@(EditorConfigDestinationFile)" Condition="Exists('@(EditorConfigDestinationFile)')">
-			<Output TaskParameter="Hash" ItemName="_DestHash" />
+		<GetFileHash Files="$(_WwsEditorConfigDestinationFile)" Condition="Exists('$(_WwsEditorConfigDestinationFile)')">
+			<Output TaskParameter="Hash" PropertyName="_WwsDestinationHash" />
 		</GetFileHash>
-		
+
 		<Copy
 			SourceFiles="@(EditorConfigFilesToCopy)"
-			DestinationFolder="@(EditorConfigDestination)"
-			Condition="'@(_SourceHash)' != '@(_DestHash)'"
-			SkipUnchangedFiles="true"
+			DestinationFolder="$(_WwsEditorConfigDestinationDir)"
+			Condition="'$(_WwsSourceHash)' != '$(_WwsDestinationHash)'"
 			UseHardlinksIfPossible="false">
 			<Output TaskParameter="CopiedFiles" ItemName="_CopiedEditorConfigFiles" />
 		</Copy>
-	
+
 		<Message
-			Text="Copied .editorconfig from '@(EditorConfigFilesToCopy)' to '@(EditorConfigDestination)'"
+			Text="Copied .editorconfig from '@(EditorConfigFilesToCopy)' to '$(_WwsEditorConfigDestinationDir)'"
 			Importance="high"
 			Condition="'@(_CopiedEditorConfigFiles)' != ''" />
 	</Target>

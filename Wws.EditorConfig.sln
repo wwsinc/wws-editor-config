@@ -1,15 +1,30 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.7.34009.444
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12224.181 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wws.EditorConfig", "Wws.EditorConfig\Wws.EditorConfig.csproj", "{07A60535-D13D-4B36-B692-F70608B6BE40}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{811237F1-B80E-4606-93C6-0286F153E102}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".global", ".global", "{811237F1-B80E-4606-93C6-0286F153E102}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		global.json = global.json
 		icon.png = icon.png
 		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0757BB87-A611-4046-8831-A3BA62580590}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "smoke", "smoke", "{0E29CCE8-14D3-463D-A9ED-4A8EFD8CC2EE}"
+	ProjectSection(SolutionItems) = preProject
+		tests\smoke\run.ps1 = tests\smoke\run.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixture", "fixture", "{5C4D79F7-E5C1-4AF5-8F18-531D2E58C65E}"
+	ProjectSection(SolutionItems) = preProject
+		tests\smoke\fixture\Directory.Build.props = tests\smoke\fixture\Directory.Build.props
+		tests\smoke\fixture\src\Smoke\Smoke.csproj = tests\smoke\fixture\src\Smoke\Smoke.csproj
+		tests\smoke\fixture\src\Smoke\Violations.cs = tests\smoke\fixture\src\Smoke\Violations.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{7EF92873-D836-4803-BD72-94A82F17FCAF}"
@@ -35,6 +50,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{996FAB48-266F-4CE6-B3CD-53F0375C4D87} = {7EF92873-D836-4803-BD72-94A82F17FCAF}
+		{0E29CCE8-14D3-463D-A9ED-4A8EFD8CC2EE} = {0757BB87-A611-4046-8831-A3BA62580590}
+		{5C4D79F7-E5C1-4AF5-8F18-531D2E58C65E} = {0E29CCE8-14D3-463D-A9ED-4A8EFD8CC2EE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E131DA76-A4E2-4C95-9F8D-B2FC69B16E28}
