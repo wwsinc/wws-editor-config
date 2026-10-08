@@ -96,7 +96,8 @@ Assert ($output -match 'warning IDE0011') 'restored rules applied in the same bu
 Assert (-not (Test-Path $projectEditorConfig)) 'nothing copied next to the project'
 
 Write-Host 'CI build copies .editorconfig too, so folder-specific overrides apply exactly as locally'
-Remove-Item $solutionEditorConfig
+# -Force: on Linux PowerShell treats dot-files as hidden and refuses to delete them otherwise
+Remove-Item $solutionEditorConfig -Force
 $output = Invoke-Build $solution.FullName $true
 Assert ((Test-Path $solutionEditorConfig) -and (Get-Hash $solutionEditorConfig) -eq (Get-Hash $packagedEditorConfig)) '.editorconfig copied in CI'
 Assert ($output -match 'warning S1481') 'SonarAnalyzer rule S1481 reported in CI'
@@ -105,7 +106,7 @@ Assert ($output -match 'warning IDE0011') 'code style rule IDE0011 reported in C
 Assert ($output -notmatch 'IDE0005') 'IDE0005 (an error elsewhere) stays off for **/Shared/** in CI'
 
 Write-Host 'Project without any solution gets .editorconfig next to the project'
-Remove-Item $solution.FullName
+Remove-Item $solution.FullName -Force
 $output = Invoke-Build $project $false
 Assert (Test-Path $projectEditorConfig) '.editorconfig copied to the project folder'
 
