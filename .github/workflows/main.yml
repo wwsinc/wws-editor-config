@@ -27,13 +27,13 @@ jobs:
   create_nuget:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0 # Full history and tags, so MinVer can compute the version from the latest tag
 
     # Install the .NET SDK indicated in the global.json file
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
 
@@ -41,7 +41,7 @@ jobs:
       run: dotnet pack Wws.EditorConfig/Wws.EditorConfig.csproj --configuration Release --output ${{ env.NuGetDirectory }}
 
     # Publish the NuGet package as an artifact, so they can be used in the following jobs
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: nuget
         if-no-files-found: error
@@ -52,15 +52,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ create_nuget ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
       # Download the NuGet package created in the previous job
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
@@ -74,7 +74,9 @@ jobs:
       # using the --excluded-rules or --excluded-rule-ids option
       - name: Validate package
         run: |
-          foreach ($package in (Get-ChildItem "${{ env.NuGetDirectory }}" -Filter *.nupkg)) {
+          $packages = @(Get-ChildItem "${{ env.NuGetDirectory }}" -Filter *.nupkg)
+          if ($packages.Count -eq 0) { throw "No .nupkg found in ${{ env.NuGetDirectory }}" }
+          foreach ($package in $packages) {
             Write-Host "Validating package: $($package.FullName)"
             meziantou.validate-nuget-package $package.FullName --excluded-rules Symbols
           }
@@ -83,14 +85,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ create_nuget ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
@@ -108,19 +110,21 @@ jobs:
     needs: [ validate_nuget, smoke_test ]
     steps:
       # Download the NuGet package created in the previous job
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
 
       # Publish all NuGet packages to NuGet.org
       # Use --skip-duplicate to prevent errors if a package with the same version already exists.
       # If you retry a failed workflow, already published packages will be skipped without error.
       - name: Publish NuGet package
         run: |
-          foreach ($file in (Get-ChildItem "${{ env.NuGetDirectory }}" -Filter *.nupkg)) {
+          $packages = @(Get-ChildItem "${{ env.NuGetDirectory }}" -Filter *.nupkg)
+          if ($packages.Count -eq 0) { throw "No .nupkg found in ${{ env.NuGetDirectory }}" }
+          foreach ($file in $packages) {
             dotnet nuget push $file --api-key "${{ secrets.NUGET_APIKEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
