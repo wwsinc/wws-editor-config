@@ -65,7 +65,8 @@ csharp_new_line_before_members_in_anonymous_types = true
 csharp_style_namespace_declarations = file_scoped:error
 
 # Brace settings
-csharp_prefer_braces = true:error# Prefer curly braces even for one line of code
+# Prefer curly braces even for one line of code
+csharp_prefer_braces = true:error
 csharp_indent_labels = one_less_than_current
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_style_prefer_method_group_conversion = true:silent
@@ -408,7 +409,7 @@ dotnet_diagnostic.IDE0007.severity = none
 dotnet_diagnostic.CA1515.severity = none
 
 
-[{eng/tools/**.cs,**/{test,testassets,samples,Samples,perf,benchmarkapps,scripts,stress}/**.cs,src/Hosting/Server.IntegrationTesting/**.cs,src/Servers/IIS/IntegrationTesting.IIS/**.cs,src/Shared/Http2cat/**.cs,src/Testing/**.cs}]
+[{eng/tools/**.cs,{test,testassets,samples,Samples,perf,benchmarkapps,scripts,stress}/**.cs,**/{test,testassets,samples,Samples,perf,benchmarkapps,scripts,stress}/**.cs,src/Hosting/Server.IntegrationTesting/**.cs,src/Servers/IIS/IntegrationTesting.IIS/**.cs,src/Shared/Http2cat/**.cs,src/Testing/**.cs}]
 # CA1018: Mark attributes with AttributeUsageAttribute
 dotnet_diagnostic.CA1018.severity = suggestion
 # CA1507: Use nameof to express symbol names
@@ -513,7 +514,7 @@ dotnet_diagnostic.CA2016.severity = suggestion
 
 # Defaults for content in the shared src/ and shared runtime dir
 
-[{**/Shared/runtime/**.{cs,vb},src/Shared/test/Shared.Tests/runtime/**.{cs,vb},**/microsoft.extensions.hostfactoryresolver.sources/**.{cs,vb}}]
+[{Shared/runtime/**.{cs,vb},**/Shared/runtime/**.{cs,vb},src/Shared/test/Shared.Tests/runtime/**.{cs,vb},microsoft.extensions.hostfactoryresolver.sources/**.{cs,vb},**/microsoft.extensions.hostfactoryresolver.sources/**.{cs,vb}}]
 # CA1822: Make member static
 dotnet_diagnostic.CA1822.severity = silent
 # IDE0011: Use braces
@@ -527,7 +528,7 @@ dotnet_diagnostic.IDE0062.severity = silent
 # IDE0161: Convert to file-scoped namespace
 dotnet_diagnostic.IDE0161.severity = silent
 
-[{**/Shared/**.cs,**/microsoft.extensions.hostfactoryresolver.sources/**.{cs,vb}}]
+[{Shared/**.cs,**/Shared/**.cs,microsoft.extensions.hostfactoryresolver.sources/**.{cs,vb},**/microsoft.extensions.hostfactoryresolver.sources/**.{cs,vb}}]
 # IDE0005: Remove unused usings. Ignore for shared src files since imports for those depend on the projects in which they are included.
 dotnet_diagnostic.IDE0005.severity = silent
 
@@ -573,14 +574,14 @@ dotnet_style_collection_initializer = true:suggestion
 dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true:silent
 
-[**/Migrations/*.cs]
+[{Migrations/*.cs,**/Migrations/*.cs}]
 dotnet_diagnostic.S1192.severity = none
 dotnet_diagnostic.S1133.severity = none
 dotnet_diagnostic.S4226.severity = none
 
 # Suppress S4226 for Mapper files only
 # Extension methods in a different namespace is fine in mappers
-[**/Contracts/**/*Mapper.cs]
+[{Contracts/*Mapper.cs,Contracts/**/*Mapper.cs,**/Contracts/*Mapper.cs,**/Contracts/**/*Mapper.cs}]
 dotnet_diagnostic.S4226.severity = none
 #==========================
 # Rules for SonarAnalyzer

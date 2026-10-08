@@ -1,0 +1,8 @@
+<Project>
+
+	<!-- WwsEditorConfigVersion is passed in by run.ps1 -->
+	<ItemGroup>
+		<PackageReference Include="Wws.EditorConfig" Version="$(WwsEditorConfigVersion)" PrivateAssets="all" />
+	</ItemGroup>
+
+</Project>

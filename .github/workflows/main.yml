@@ -15,8 +15,9 @@ on:
 
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
   CI_BUILD: true
-  NuGetDirectory: ${{ github.workspace}}/nuget
+  NuGetDirectory: ${{ github.workspace }}/nuget
 
 defaults:
   run:
@@ -28,13 +29,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Get all history to allow automatic versioning using MinVer
+        fetch-depth: 0 # Full history and tags, so MinVer can compute the version from the latest tag
 
     # Install the .NET SDK indicated in the global.json file
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
 
-    - run: dotnet build --configuration Release
+    - name: Pack
+      run: dotnet pack Wws.EditorConfig/Wws.EditorConfig.csproj --configuration Release --output ${{ env.NuGetDirectory }}
 
     # Publish the NuGet package as an artifact, so they can be used in the following jobs
     - uses: actions/upload-artifact@v4
@@ -42,22 +46,24 @@ jobs:
         name: nuget
         if-no-files-found: error
         retention-days: 7
-        path: '**/bin/Release/*.nupkg'
+        path: ${{ env.NuGetDirectory }}/*.nupkg
 
   validate_nuget:
     runs-on: ubuntu-latest
     needs: [ create_nuget ]
-    steps: 
+    steps:
+      - uses: actions/checkout@v4
 
-      # Install the .NET SDK indicated in the global.json file
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
 
       # Download the NuGet package created in the previous job
       - uses: actions/download-artifact@v4
         with:
           name: nuget
-          path: '**/bin/Release'
+          path: ${{ env.NuGetDirectory }}
 
       - name: Install nuget validator
         run: dotnet tool update Meziantou.Framework.NuGetPackageValidation.Tool --global
@@ -68,28 +74,46 @@ jobs:
       # using the --excluded-rules or --excluded-rule-ids option
       - name: Validate package
         run: |
-            Write-Host "Current directory: $(Get-Location)"
-            $nugetPackages = Get-ChildItem "/home/runner/work/wws-editor-config/wws-editor-config" -Filter *.nupkg -Recurse
-            foreach ($package in $nugetPackages) {
-              Write-Host "Validating package: $($package.FullName)"
-              meziantou.validate-nuget-package $package.FullName --excluded-rules Symbols
-            }
+          foreach ($package in (Get-ChildItem "${{ env.NuGetDirectory }}" -Filter *.nupkg)) {
+            Write-Host "Validating package: $($package.FullName)"
+            meziantou.validate-nuget-package $package.FullName --excluded-rules Symbols
+          }
+
+  smoke_test:
+    runs-on: ubuntu-latest
+    needs: [ create_nuget ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget
+          path: ${{ env.NuGetDirectory }}
+
+      # Consumes the package from a throwaway solution and checks the rules are enforced
+      - name: Smoke test
+        run: ./tests/smoke/run.ps1 -PackageDirectory "${{ env.NuGetDirectory }}"
+
   deploy:
     # Publish only when creating a GitHub Release
     # https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository
-    # You can update this logic if you want to manage releases differently
+    # The release tag (e.g. 1.3.3) is the package version
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
-    needs: [ validate_nuget ]
+    needs: [ validate_nuget, smoke_test ]
     steps:
       # Download the NuGet package created in the previous job
       - uses: actions/download-artifact@v4
         with:
           name: nuget
-          path: '**/bin/Release'
+          path: ${{ env.NuGetDirectory }}
 
-      # Install the .NET SDK indicated in the global.json file
-      - name: Setup .NET Core
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
 
       # Publish all NuGet packages to NuGet.org
@@ -97,6 +121,6 @@ jobs:
       # If you retry a failed workflow, already published packages will be skipped without error.
       - name: Publish NuGet package
         run: |
-          foreach($file in (Get-ChildItem "/home/runner/work/wws-editor-config/wws-editor-config" -Recurse -Include *.nupkg)) {
-              dotnet nuget push $file --api-key "${{ secrets.NUGET_APIKEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          foreach ($file in (Get-ChildItem "${{ env.NuGetDirectory }}" -Filter *.nupkg)) {
+            dotnet nuget push $file --api-key "${{ secrets.NUGET_APIKEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
           }

@@ -12,60 +12,166 @@
 		<RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 		<Nullable>enable</Nullable>
-		<WarningsAsErrors>nullable</WarningsAsErrors>
+		<!-- Appended, so entries a consumer sets in Directory.Build.props (imported earlier) are kept -->
+		<WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
 		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
 	</PropertyGroup>
 
-	<ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
-		<PackageVersion Include="SonarAnalyzer.CSharp" Version="[10.35.0.4138]" />
-		<PackageReference Include="SonarAnalyzer.CSharp">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'false'">
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="[10.35.0.4138]">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
+	<!--
+		SonarAnalyzer.CSharp is not added here: NuGet ignores package props during restore, so a PackageReference
+		declared in this file is never restored. It ships as a dependency of the package instead (see Wws.EditorConfig.csproj).
+	-->
 
 	<ItemGroup>
 		<EditorConfigFilesToCopy Include="$(MSBuildThisFileDirectory)..\content\rules\.editorconfig" />
 	</ItemGroup>
 
-	<PropertyGroup>
-		<_IsCI Condition="'$(TF_BUILD)' == 'true' OR '$(CI_BUILD)' == 'true'">true</_IsCI>
-	</PropertyGroup>
-	
-	<ItemGroup Condition="'$(_IsCI)' != 'true'">
-		<EditorConfigDestination Include="$(SolutionDir)" />
-		<EditorConfigDestinationFile Include="$(SolutionDir)\.editorconfig" />
-	</ItemGroup>
+	<!-- Walks up from the project directory to the nearest folder holding a .sln/.slnx, stopping at the repository root -->
+	<UsingTask TaskName="WwsFindSolutionDirectory" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<StartDirectory ParameterType="System.String" Required="true" />
+			<SolutionDirectory ParameterType="System.String" Output="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Linq" />
+			<Code Type="Fragment" Language="cs"><![CDATA[
+				var dir = new DirectoryInfo(StartDirectory);
+				while (dir != null)
+				{
+					try
+					{
+						var hasSolution = dir.EnumerateFiles("*.sln*").Any(f =>
+							f.Extension.Equals(".sln", StringComparison.OrdinalIgnoreCase) ||
+							f.Extension.Equals(".slnx", StringComparison.OrdinalIgnoreCase));
+						if (hasSolution)
+						{
+							SolutionDirectory = dir.FullName;
+							break;
+						}
+						if (Directory.Exists(Path.Combine(dir.FullName, ".git")) || File.Exists(Path.Combine(dir.FullName, ".git")))
+						{
+							break;
+						}
+					}
+					catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException || ex is System.Security.SecurityException)
+					{
+						// A folder we may not list ends the search
+						break;
+					}
+					dir = dir.Parent;
+				}
+			]]></Code>
+		</Task>
+	</UsingTask>
 
-	<Target Name="CopyEditorConfig" BeforeTargets="Rebuild;Build" Condition="'$(_IsCI)' != 'true' AND '@(EditorConfigDestination)' != ''">
-		<GetFileHash Files="@(EditorConfigFilesToCopy)">
-			<Output TaskParameter="Hash" ItemName="_SourceHash" />
-		</GetFileHash>
+	<!--
+		Writes the packaged .editorconfig over the destination when the content differs. The file is written to a temporary
+		file and swapped in, so parallel builds (other projects, other target frameworks) never see a half-written file,
+		and a swap that collides with another build is retried.
+	-->
+	<UsingTask TaskName="WwsSyncFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<SourceFile ParameterType="System.String" Required="true" />
+			<DestinationFile ParameterType="System.String" Required="true" />
+			<Copied ParameterType="System.Boolean" Output="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Linq" />
+			<Using Namespace="System.Threading" />
+			<Code Type="Fragment" Language="cs"><![CDATA[
+				const int maxAttempts = 10;
+				var source = File.ReadAllBytes(SourceFile);
+				for (var attempt = 1; attempt <= maxAttempts; attempt++)
+				{
+					var temp = DestinationFile + "." + Guid.NewGuid().ToString("N") + ".tmp";
+					try
+					{
+						if (File.Exists(DestinationFile) && File.ReadAllBytes(DestinationFile).SequenceEqual(source))
+						{
+							break;
+						}
 
-		<GetFileHash Files="@(EditorConfigDestinationFile)" Condition="Exists('@(EditorConfigDestinationFile)')">
-			<Output TaskParameter="Hash" ItemName="_DestHash" />
-		</GetFileHash>
-		
-		<Copy
-			SourceFiles="@(EditorConfigFilesToCopy)"
-			DestinationFolder="@(EditorConfigDestination)"
-			Condition="'@(_SourceHash)' != '@(_DestHash)'"
-			SkipUnchangedFiles="true"
-			UseHardlinksIfPossible="false">
-			<Output TaskParameter="CopiedFiles" ItemName="_CopiedEditorConfigFiles" />
-		</Copy>
-	
+						File.WriteAllBytes(temp, source);
+						if (File.Exists(DestinationFile))
+						{
+							File.Replace(temp, DestinationFile, null);
+						}
+						else
+						{
+							File.Move(temp, DestinationFile);
+						}
+						Copied = true;
+						break;
+					}
+					catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+					{
+						if (attempt == maxAttempts)
+						{
+							Log.LogError("Could not write '{0}': {1}", DestinationFile, ex.Message);
+						}
+						else
+						{
+							Thread.Sleep(200);
+						}
+					}
+					finally
+					{
+						try
+						{
+							if (File.Exists(temp))
+							{
+								File.Delete(temp);
+							}
+						}
+						catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+						{
+							Log.LogWarning("Could not delete temporary file '{0}': {1}", temp, ex.Message);
+						}
+					}
+				}
+			]]></Code>
+		</Task>
+	</UsingTask>
+
+	<!-- Runs before BeforeBuild so the compiler picks up the restored .editorconfig in the same build -->
+	<Target Name="CopyEditorConfig" BeforeTargets="BeforeBuild">
+		<PropertyGroup>
+			<_WwsEditorConfigDestinationDir Condition="'$(SolutionDir)' != '' AND '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</_WwsEditorConfigDestinationDir>
+		</PropertyGroup>
+
+		<!-- Building a project directly (no solution): fall back to the nearest solution folder -->
+		<WwsFindSolutionDirectory StartDirectory="$(MSBuildProjectDirectory)" Condition="'$(_WwsEditorConfigDestinationDir)' == ''">
+			<Output TaskParameter="SolutionDirectory" PropertyName="_WwsEditorConfigDestinationDir" />
+		</WwsFindSolutionDirectory>
+
+		<!-- No solution anywhere up to the repository root: keep the rules next to the project -->
+		<PropertyGroup>
+			<_WwsEditorConfigDestinationDir Condition="'$(_WwsEditorConfigDestinationDir)' == ''">$(MSBuildProjectDirectory)</_WwsEditorConfigDestinationDir>
+			<_WwsEditorConfigDestinationDir>$([MSBuild]::EnsureTrailingSlash('$(_WwsEditorConfigDestinationDir)'))</_WwsEditorConfigDestinationDir>
+			<_WwsEditorConfigDestinationFile>$([System.IO.Path]::GetFullPath('$(_WwsEditorConfigDestinationDir).editorconfig'))</_WwsEditorConfigDestinationFile>
+		</PropertyGroup>
+
+		<WwsSyncFile SourceFile="@(EditorConfigFilesToCopy->'%(FullPath)')" DestinationFile="$(_WwsEditorConfigDestinationFile)">
+			<Output TaskParameter="Copied" PropertyName="_WwsEditorConfigCopied" />
+		</WwsSyncFile>
+
+		<!--
+			The SDK collects EditorConfigFiles when the project is evaluated, so a file that did not exist yet would be missed
+			by this build's compiler. Register it unless it is already there (a duplicate entry is a compiler error).
+		-->
+		<ItemGroup>
+			<_WwsKnownEditorConfig Include="@(EditorConfigFiles)" Condition="'%(FullPath)' == '$(_WwsEditorConfigDestinationFile)'" />
+			<EditorConfigFiles Include="$(_WwsEditorConfigDestinationFile)" Condition="'@(_WwsKnownEditorConfig)' == '' AND '$(DiscoverEditorConfigFiles)' != 'false' AND Exists('$(_WwsEditorConfigDestinationFile)')" />
+		</ItemGroup>
+
 		<Message
-			Text="Copied .editorconfig from '@(EditorConfigFilesToCopy)' to '@(EditorConfigDestination)'"
+			Text="Copied .editorconfig from '@(EditorConfigFilesToCopy->'%(FullPath)')' to '$(_WwsEditorConfigDestinationDir)'"
 			Importance="high"
-			Condition="'@(_CopiedEditorConfigFiles)' != ''" />
+			Condition="'$(_WwsEditorConfigCopied)' == 'true'" />
 	</Target>
 
 </Project>
