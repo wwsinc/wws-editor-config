@@ -38,7 +38,7 @@
 	<ItemGroup>
 		<PackageReference Include="MinVer" Version="8.0.0" PrivateAssets="All" />
 		<!-- Packed as a dependency with all assets, so every consumer restores Sonar and runs its analyzers. The only place its version is set. -->
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="[10.35.0.4138]" PrivateAssets="none" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="10.36.0.15337" PrivateAssets="none" />
 	</ItemGroup>
 
 	<!-- Compose the .editorconfig file from the templates -->
