@@ -108,6 +108,8 @@ jobs:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     needs: [ validate_nuget, smoke_test ]
+    permissions:
+      id-token: write # Lets the job request the GitHub OIDC token that Trusted Publishing exchanges for a NuGet key
     steps:
       # Download the NuGet package created in the previous job
       - uses: actions/download-artifact@v8
@@ -118,6 +120,15 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
 
+      # Trusted Publishing: swap the GitHub OIDC token for a NuGet API key that is valid for one hour
+      # https://learn.microsoft.com/nuget/nuget-org/trusted-publishing
+      # user is the nuget.org profile name that owns the package and the Trusted Publishing policy (not an email address)
+      - name: NuGet login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0, pinned: third-party action that receives the publish token
+        id: login
+        with:
+          user: vadimKh
+
       # Publish all NuGet packages to NuGet.org
       # Use --skip-duplicate to prevent errors if a package with the same version already exists.
       # If you retry a failed workflow, already published packages will be skipped without error.
@@ -126,5 +137,5 @@ jobs:
           $packages = @(Get-ChildItem "${{ env.NuGetDirectory }}" -Filter *.nupkg)
           if ($packages.Count -eq 0) { throw "No .nupkg found in ${{ env.NuGetDirectory }}" }
           foreach ($file in $packages) {
-            dotnet nuget push $file --api-key "${{ secrets.NUGET_APIKEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+            dotnet nuget push $file --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
